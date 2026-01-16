@@ -20,7 +20,6 @@ pip install pycaching
 ```
 
 ### Optional Dependencies
-
 ```bash
 # Redis support
 pip install pycaching[redis]
@@ -44,7 +43,6 @@ pip install pycaching[all]
 ## Quick Start
 
 ### Basic Usage
-
 ```python
 from pycaching import create_cache
 
@@ -58,7 +56,6 @@ print(value)  # "value1"
 ```
 
 ### Decorator API
-
 ```python
 from pycaching.api.decorator import cache
 
@@ -71,7 +68,6 @@ result = expensive_function(5)  # Cached for 1 hour
 ```
 
 ### Context Manager API
-
 ```python
 from pycaching.api.context import CacheContext
 
@@ -80,7 +76,6 @@ with CacheContext("my_key") as ctx:
 ```
 
 ### Functional API
-
 ```python
 from pycaching.api.functional import cache
 
@@ -89,7 +84,6 @@ value = cache.get("key1")
 ```
 
 ### Redis Backend
-
 ```python
 from pycaching import create_cache
 
@@ -101,7 +95,6 @@ cache = create_cache(
 ```
 
 ### LLM Semantic Caching
-
 ```python
 from pycaching.llm import SemanticCache
 from pycaching.llm.embedding import EmbeddingGenerator
@@ -166,7 +159,6 @@ response = semantic_cache.get("Tell me about Python")
 ```
 
 ### Visualization
-
 ```python
 from pycaching.visualization import MetricsCollector, ChartGenerator, JSONExporter
 
@@ -186,7 +178,6 @@ JSONExporter.export_metrics(metrics, "metrics.json")
 ## Documentation
 
 ### Backends
-
 - **Memory**: In-memory dictionary-based backend
 - **File**: File-based persistent backend
 - **SQLite**: SQLite database backend
@@ -197,7 +188,6 @@ JSONExporter.export_metrics(metrics, "metrics.json")
 - **Cloudflare KV**: Cloudflare KV backend
 
 ### Strategies
-
 - **Cache-Aside**: Lazy loading pattern
 - **Write-Through**: Write to cache and data store simultaneously
 - **Write-Back**: Write to cache, async write to data store
@@ -205,13 +195,11 @@ JSONExporter.export_metrics(metrics, "metrics.json")
 - **Refresh-Ahead**: Proactive refresh before expiration
 
 ### Eviction Policies
-
 - **LRU**: Least Recently Used
 - **LFU**: Least Frequently Used
 - **FIFO**: First In First Out
 
 ## Examples
-
 See the `examples/` directory for more usage examples:
 
 - `basic_usage.py` - Basic cache operations
@@ -220,10 +208,8 @@ See the `examples/` directory for more usage examples:
 - `visualization_example.py` - Cache metrics and visualization
 
 ## License
-
 MIT
 
 ## Contributing
-
 Contributions are welcome! Please open an issue or submit a pull request.
->>>>>>> 723ca20 (All about caching)
+(All about caching)
