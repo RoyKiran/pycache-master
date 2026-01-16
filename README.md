@@ -16,7 +16,7 @@ Modular Python caching library for microservices, databases, and LLM workflows. 
 ## Installation
 
 ```bash
-pip install pycaching
+pip install pycache-master
 ```
 
 ### Optional Dependencies
