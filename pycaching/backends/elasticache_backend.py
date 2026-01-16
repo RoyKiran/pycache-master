@@ -1,0 +1,137 @@
+"""AWS ElastiCache (Redis-compatible) backend implementation."""
+
+from typing import Iterator, Optional
+from threading import Lock
+
+from pycaching.backends.base import BaseBackend
+from pycaching.core.exceptions import BackendError
+from pycaching.core.types import CacheKey, CacheValue
+from pycaching.utils.serialization import PickleSerializer, Serializer
+
+
+class ElastiCacheBackend(BaseBackend):
+    """
+    AWS ElastiCache backend (Redis-compatible).
+
+    This is essentially a Redis backend with AWS-specific configuration.
+    """
+
+    def __init__(
+        self,
+        cluster_endpoint: str,
+        port: int = 6379,
+        password: Optional[str] = None,
+        max_connections: int = 50,
+        serializer: Optional[Serializer] = None,
+        name: str = "elasticache",
+        enable_metadata: bool = True,
+    ):
+        super().__init__(name, enable_metadata)
+        try:
+            import redis
+            from redis.connection import ConnectionPool
+        except ImportError:
+            raise ImportError(
+                "redis is required for ElastiCacheBackend. Install with: pip install redis"
+            )
+
+        self.serializer = serializer or PickleSerializer()
+        self._lock = Lock()
+
+        # Create connection pool for ElastiCache
+        self.pool = redis.ConnectionPool(
+            host=cluster_endpoint,
+            port=port,
+            password=password,
+            max_connections=max_connections,
+            decode_responses=False,
+            ssl=True,  # ElastiCache typically uses SSL
+        )
+        self.client = redis.Redis(connection_pool=self.pool)
+
+    def _get_impl(self, key: CacheKey) -> Optional[CacheValue]:
+        """Get a value from ElastiCache."""
+        key_str = str(key).encode("utf-8")
+
+        try:
+            with self._lock:
+                data = self.client.get(key_str)
+                if data is None:
+                    return None
+                return self.serializer.deserialize(data)
+        except Exception as e:
+            raise BackendError(f"Failed to get value from ElastiCache: {e}") from e
+
+    def _set_impl(
+        self,
+        key: CacheKey,
+        value: CacheValue,
+        ttl: Optional[float] = None,
+    ) -> bool:
+        """Set a value in ElastiCache."""
+        key_str = str(key).encode("utf-8")
+
+        try:
+            with self._lock:
+                data = self.serializer.serialize(value)
+                if ttl is not None:
+                    self.client.setex(key_str, int(ttl), data)
+                else:
+                    self.client.set(key_str, data)
+                return True
+        except Exception as e:
+            raise BackendError(f"Failed to set value in ElastiCache: {e}") from e
+
+    def _delete_impl(self, key: CacheKey) -> bool:
+        """Delete a value from ElastiCache."""
+        key_str = str(key).encode("utf-8")
+
+        try:
+            with self._lock:
+                deleted = self.client.delete(key_str)
+                return deleted > 0
+        except Exception as e:
+            raise BackendError(f"Failed to delete value from ElastiCache: {e}") from e
+
+    def _exists_impl(self, key: CacheKey) -> bool:
+        """Check if a key exists in ElastiCache."""
+        key_str = str(key).encode("utf-8")
+
+        try:
+            with self._lock:
+                return bool(self.client.exists(key_str))
+        except Exception as e:
+            raise BackendError(f"Failed to check existence in ElastiCache: {e}") from e
+
+    def _clear_impl(self) -> bool:
+        """Clear all entries from ElastiCache."""
+        try:
+            with self._lock:
+                self.client.flushdb()
+                return True
+        except Exception as e:
+            raise BackendError(f"Failed to clear ElastiCache: {e}") from e
+
+    def keys(self, pattern: Optional[str] = None) -> Iterator[CacheKey]:
+        """Get all keys from ElastiCache."""
+        try:
+            with self._lock:
+                pattern_str = pattern.encode("utf-8") if pattern else b"*"
+                for key_bytes in self.client.scan_iter(match=pattern_str):
+                    yield key_bytes.decode("utf-8")
+        except Exception as e:
+            raise BackendError(f"Failed to get keys from ElastiCache: {e}") from e
+
+    def size(self) -> int:
+        """Get the number of entries in ElastiCache."""
+        try:
+            with self._lock:
+                return self.client.dbsize()
+        except Exception as e:
+            raise BackendError(f"Failed to get size from ElastiCache: {e}") from e
+
+    def close(self) -> None:
+        """Close ElastiCache connection pool."""
+        super().close()
+        if hasattr(self, "pool"):
+            self.pool.disconnect()
