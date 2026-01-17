@@ -1,7 +1,7 @@
 # pycache-master
 Modular Python caching library for microservices, databases, and LLM workflows. Configurable strategies like cache-aside, write-through, TTL, Redis/ElastiCache, Memcached &amp; semantic LLM caching with inspection tools, backend abstraction, and backend metrics. Boost performance, reduce latency, and scale caching across apps.
 
-## Features
+## Features 
 
 - **Multiple Backends**: Memory, File, SQLite, Redis, Memcached, MongoDB, ElastiCache, Cloudflare KV
 - **Caching Strategies**: Cache-aside, Write-through, Write-back, Read-through, Refresh-ahead
